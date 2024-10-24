@@ -61,12 +61,16 @@ def play_midi_file(file_path):
         if msg.type == 'set_tempo':
             tempo = msg.tempo
         elif msg.type == 'note_on' and msg.velocity > 0:
-            duration = (mido.tick2second(1, ticks_per_beat, tempo))  # Duration of 1 tick
-            channel = msg.channel + 1
-            note = msg.note
-            waveform_type = get_waveform(channel)
-            waveform = generate_waveform(note, duration, waveform_type)
-            play_waveform(waveform)
+            # Check if note is within the valid MIDI range
+            if 0 <= msg.note <= 127:
+                duration = (mido.tick2second(1, ticks_per_beat, tempo))  # Duration of 1 tick
+                channel = msg.channel + 1
+                note = msg.note
+                waveform_type = get_waveform(channel)
+                waveform = generate_waveform(note, duration, waveform_type)
+                play_waveform(waveform)
+            else:
+                print(f"Omitting note {msg.note} outside of valid range (0-127).")
         elif msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
             # Handle note off events if needed
             pass
