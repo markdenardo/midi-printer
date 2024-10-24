@@ -48,27 +48,33 @@ def play_waveform(waveform):
     stream.write(waveform.astype(np.float32).tobytes())
     stream.close()
 
-# MIDI event handler
-def handle_midi_event(msg):
-    if msg.type == 'note_on' and msg.velocity > 0:
-        channel = msg.channel + 1
-        note = msg.note
-        duration = 0.5  # Fixed duration for simplicity
-        waveform_type = get_waveform(channel)
-        waveform = generate_waveform(note, duration, waveform_type)
-        play_waveform(waveform)
-    elif msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
-        # You can handle note off events here if needed
-        pass
+# Load and play a MIDI file
+def play_midi_file(file_path):
+    midi = mido.MidiFile(file_path)
+    
+    tempo = 500000  # Default tempo: 120 BPM in microseconds per beat
+    ticks_per_beat = midi.ticks_per_beat
 
-# Main function
+    print(f"Playing MIDI file: {file_path}")
+    
+    for msg in midi.play():
+        if msg.type == 'set_tempo':
+            tempo = msg.tempo
+        elif msg.type == 'note_on' and msg.velocity > 0:
+            duration = (mido.tick2second(1, ticks_per_beat, tempo))  # Duration of 1 tick
+            channel = msg.channel + 1
+            note = msg.note
+            waveform_type = get_waveform(channel)
+            waveform = generate_waveform(note, duration, waveform_type)
+            play_waveform(waveform)
+        elif msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
+            # Handle note off events if needed
+            pass
+
+# Main function to play a MIDI file
 def main():
-    print("Starting 32-channel MIDI player...")
-    with mido.open_input() as midi_input:
-        while True:
-            for msg in midi_input.iter_pending():
-                handle_midi_event(msg)
-            time.sleep(0.01)
+    midi_file_path = 'your_midi_file.mid'  # Replace with your MIDI file path
+    play_midi_file(midi_file_path)
 
 if __name__ == '__main__':
     try:
